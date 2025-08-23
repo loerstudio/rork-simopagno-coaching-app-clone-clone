@@ -10,7 +10,7 @@ import {
   Platform
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Send, Paperclip, Mic, Check, CheckCheck } from 'lucide-react-native';
+import { Send, Paperclip, Mic, Check, CheckCheck, ChevronLeft, MessageCircle } from 'lucide-react-native';
 import { useTheme } from '@/providers/ThemeProvider';
 import { useAuth } from '@/providers/AuthProvider';
 
@@ -22,11 +22,51 @@ interface Message {
   read: boolean;
 }
 
+interface Chat {
+  id: number;
+  name: string;
+  lastMessage: string;
+  timestamp: string;
+  unreadCount: number;
+  avatar: string;
+  online: boolean;
+}
+
 export default function ChatsScreen() {
   const { theme } = useTheme();
   const { user } = useAuth();
   const scrollViewRef = useRef<ScrollView>(null);
   const [message, setMessage] = useState('');
+  const [selectedChat, setSelectedChat] = useState<number | null>(null);
+  const [chats] = useState<Chat[]>([
+    {
+      id: 1,
+      name: 'Simone Pagno',
+      lastMessage: 'Ok, la prossima volta proviamo a ridurre di 1-2kg...',
+      timestamp: '10:36',
+      unreadCount: 1,
+      avatar: 'SP',
+      online: true
+    },
+    {
+      id: 2,
+      name: 'Marco Rossi',
+      lastMessage: 'Perfetto! Ci sentiamo domani',
+      timestamp: 'Ieri',
+      unreadCount: 0,
+      avatar: 'MR',
+      online: false
+    },
+    {
+      id: 3,
+      name: 'Supporto Tecnico',
+      lastMessage: 'Il tuo problema è stato risolto',
+      timestamp: '2 giorni fa',
+      unreadCount: 0,
+      avatar: 'ST',
+      online: false
+    }
+  ]);
   const [messages, setMessages] = useState<Message[]>([
     {
       id: 1,
@@ -82,20 +122,82 @@ export default function ChatsScreen() {
     }
   };
 
+  if (selectedChat === null) {
+    // Chat List View
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
+        {/* Header */}
+        <View style={styles.header}>
+          <Text style={[styles.headerTitle, { color: theme.colors.text }]}>Chat</Text>
+        </View>
+
+        {/* Chat List */}
+        <ScrollView showsVerticalScrollIndicator={false}>
+          {chats.map((chat) => (
+            <TouchableOpacity
+              key={chat.id}
+              style={[styles.chatItem, { backgroundColor: theme.colors.surface }]}
+              onPress={() => setSelectedChat(chat.id)}
+              activeOpacity={0.7}
+            >
+              <View style={styles.chatAvatar}>
+                <Text style={styles.chatAvatarText}>{chat.avatar}</Text>
+                {chat.online && <View style={styles.onlineIndicator} />}
+              </View>
+              
+              <View style={styles.chatInfo}>
+                <View style={styles.chatHeader}>
+                  <Text style={[styles.chatName, { color: theme.colors.text }]}>
+                    {chat.name}
+                  </Text>
+                  <Text style={[styles.chatTime, { color: theme.colors.textSecondary }]}>
+                    {chat.timestamp}
+                  </Text>
+                </View>
+                <View style={styles.chatFooter}>
+                  <Text
+                    style={[styles.chatLastMessage, { color: theme.colors.textSecondary }]}
+                    numberOfLines={1}
+                  >
+                    {chat.lastMessage}
+                  </Text>
+                  {chat.unreadCount > 0 && (
+                    <View style={[styles.unreadBadge, { backgroundColor: theme.colors.primary }]}>
+                      <Text style={styles.unreadCount}>{chat.unreadCount}</Text>
+                    </View>
+                  )}
+                </View>
+              </View>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      </SafeAreaView>
+    );
+  }
+
+  // Individual Chat View
+  const currentChat = chats.find(c => c.id === selectedChat);
+  
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
       {/* Header */}
       <View style={[styles.header, { backgroundColor: theme.colors.surface }]}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => setSelectedChat(null)}
+        >
+          <ChevronLeft size={24} color={theme.colors.text} />
+        </TouchableOpacity>
         <View style={styles.headerInfo}>
           <View style={styles.avatar}>
-            <Text style={styles.avatarText}>SP</Text>
+            <Text style={styles.avatarText}>{currentChat?.avatar}</Text>
           </View>
           <View>
             <Text style={[styles.trainerName, { color: theme.colors.text }]}>
-              Simone Pagno
+              {currentChat?.name}
             </Text>
-            <Text style={[styles.trainerStatus, { color: theme.colors.success }]}>
-              Online
+            <Text style={[styles.trainerStatus, { color: currentChat?.online ? theme.colors.success : theme.colors.textSecondary }]}>
+              {currentChat?.online ? 'Online' : 'Offline'}
             </Text>
           </View>
         </View>
@@ -296,5 +398,94 @@ const styles = StyleSheet.create({
   },
   micButton: {
     padding: 8,
+  },
+  headerTitle: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: 10,
+  },
+  chatItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    marginHorizontal: 20,
+    marginBottom: 8,
+    borderRadius: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  chatAvatar: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: '#FF0000',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+    position: 'relative',
+  },
+  chatAvatarText: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  onlineIndicator: {
+    position: 'absolute',
+    bottom: 2,
+    right: 2,
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: '#00C851',
+    borderWidth: 2,
+    borderColor: '#FFFFFF',
+  },
+  chatInfo: {
+    flex: 1,
+  },
+  chatHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  chatName: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  chatTime: {
+    fontSize: 12,
+  },
+  chatFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  chatLastMessage: {
+    fontSize: 14,
+    flex: 1,
+    marginRight: 8,
+  },
+  unreadBadge: {
+    minWidth: 20,
+    height: 20,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 6,
+  },
+  unreadCount: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  backButton: {
+    padding: 8,
+    marginRight: 8,
   },
 });

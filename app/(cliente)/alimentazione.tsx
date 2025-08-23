@@ -5,12 +5,17 @@ import {
   Text,
   TouchableOpacity,
   View,
-  Dimensions
+  Dimensions,
+  Alert,
+  Modal,
+  TextInput,
+  ActivityIndicator
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Camera, Check, Clock, Plus } from 'lucide-react-native';
+import { Camera, Check, Clock, Plus, X, BarChart3, Calendar } from 'lucide-react-native';
 import { useTheme } from '@/providers/ThemeProvider';
 import { LinearGradient } from 'expo-linear-gradient';
+import { CameraView, useCameraPermissions } from 'expo-camera';
 
 const { width } = Dimensions.get('window');
 
@@ -29,6 +34,9 @@ interface Pasto {
 export default function NutrizioneScreen() {
   const { theme } = useTheme();
   const [selectedTab, setSelectedTab] = useState<'piano' | 'diario' | 'grafici'>('piano');
+  const [showScanner, setShowScanner] = useState(false);
+  const [isScanning, setIsScanning] = useState(false);
+  const [permission, requestPermission] = useCameraPermissions();
   const [pasti, setPasti] = useState<Pasto[]>([
     {
       id: 1,
@@ -108,6 +116,49 @@ export default function NutrizioneScreen() {
 
   const togglePasto = (id: number) => {
     setPasti(pasti.map(p => p.id === id ? { ...p, completato: !p.completato } : p));
+  };
+
+  const handleScanFood = async () => {
+    if (!permission?.granted) {
+      const result = await requestPermission();
+      if (!result.granted) {
+        Alert.alert('Permesso Negato', 'Permesso camera necessario per scansionare gli alimenti');
+        return;
+      }
+    }
+    setShowScanner(true);
+  };
+
+  const captureAndAnalyze = async () => {
+    setIsScanning(true);
+    try {
+      // Simulate AI food recognition
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      // Mock AI response
+      const mockFoodData = {
+        nome: 'Mela Rossa',
+        calorie: 95,
+        proteine: 0.5,
+        carboidrati: 25,
+        grassi: 0.3,
+        porzione: '1 media (180g)'
+      };
+      
+      setShowScanner(false);
+      Alert.alert(
+        'Alimento Riconosciuto',
+        `${mockFoodData.nome}\n${mockFoodData.porzione}\n\nCalorie: ${mockFoodData.calorie} kcal\nProteine: ${mockFoodData.proteine}g\nCarboidrati: ${mockFoodData.carboidrati}g\nGrassi: ${mockFoodData.grassi}g`,
+        [
+          { text: 'Annulla', style: 'cancel' },
+          { text: 'Aggiungi al Diario', onPress: () => console.log('Added to diary') }
+        ]
+      );
+    } catch (error) {
+      Alert.alert('Errore', 'Impossibile riconoscere l\'alimento. Riprova.');
+    } finally {
+      setIsScanning(false);
+    }
   };
 
   return (
@@ -219,6 +270,7 @@ export default function NutrizioneScreen() {
           {/* AI Scanner Button */}
           <TouchableOpacity 
             style={[styles.scannerButton, { backgroundColor: theme.colors.surface }]}
+            onPress={handleScanFood}
           >
             <Camera size={24} color={theme.colors.primary} />
             <Text style={[styles.scannerText, { color: theme.colors.text }]}>
@@ -315,20 +367,150 @@ export default function NutrizioneScreen() {
       )}
 
       {selectedTab === 'diario' && (
-        <View style={styles.centerContainer}>
-          <Text style={[styles.comingSoon, { color: theme.colors.textSecondary }]}>
-            Diario alimentare in arrivo...
-          </Text>
-        </View>
+        <ScrollView showsVerticalScrollIndicator={false}>
+          <View style={styles.diarioContainer}>
+            <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Diario Alimentare</Text>
+            
+            {/* Calendar View */}
+            <View style={[styles.calendarCard, { backgroundColor: theme.colors.surface }]}>
+              <View style={styles.calendarHeader}>
+                <Calendar size={20} color={theme.colors.primary} />
+                <Text style={[styles.calendarTitle, { color: theme.colors.text }]}>Agosto 2025</Text>
+              </View>
+              <View style={styles.calendarGrid}>
+                {Array.from({ length: 31 }, (_, i) => (
+                  <TouchableOpacity
+                    key={i + 1}
+                    style={[
+                      styles.calendarDay,
+                      i + 1 === 23 && { backgroundColor: theme.colors.primary }
+                    ]}
+                  >
+                    <Text style={[
+                      styles.calendarDayText,
+                      { color: i + 1 === 23 ? '#FFFFFF' : theme.colors.text }
+                    ]}>
+                      {i + 1}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+
+            {/* Daily Summary */}
+            <View style={[styles.dailySummary, { backgroundColor: theme.colors.surface }]}>
+              <Text style={[styles.summaryTitle, { color: theme.colors.text }]}>Oggi - 23 Agosto</Text>
+              <View style={styles.summaryStats}>
+                <View style={styles.summaryItem}>
+                  <Text style={[styles.summaryValue, { color: theme.colors.text }]}>1,850</Text>
+                  <Text style={[styles.summaryLabel, { color: theme.colors.textSecondary }]}>kcal</Text>
+                </View>
+                <View style={styles.summaryItem}>
+                  <Text style={[styles.summaryValue, { color: theme.colors.text }]}>120g</Text>
+                  <Text style={[styles.summaryLabel, { color: theme.colors.textSecondary }]}>Proteine</Text>
+                </View>
+                <View style={styles.summaryItem}>
+                  <Text style={[styles.summaryValue, { color: theme.colors.text }]}>180g</Text>
+                  <Text style={[styles.summaryLabel, { color: theme.colors.textSecondary }]}>Carb</Text>
+                </View>
+                <View style={styles.summaryItem}>
+                  <Text style={[styles.summaryValue, { color: theme.colors.text }]}>65g</Text>
+                  <Text style={[styles.summaryLabel, { color: theme.colors.textSecondary }]}>Grassi</Text>
+                </View>
+              </View>
+            </View>
+          </View>
+        </ScrollView>
       )}
 
       {selectedTab === 'grafici' && (
-        <View style={styles.centerContainer}>
-          <Text style={[styles.comingSoon, { color: theme.colors.textSecondary }]}>
-            Grafici nutrizionali in arrivo...
-          </Text>
-        </View>
+        <ScrollView showsVerticalScrollIndicator={false}>
+          <View style={styles.graficiContainer}>
+            <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Grafici Nutrizionali</Text>
+            
+            {/* Weight Chart */}
+            <View style={[styles.chartCard, { backgroundColor: theme.colors.surface }]}>
+              <View style={styles.chartHeader}>
+                <BarChart3 size={20} color={theme.colors.primary} />
+                <Text style={[styles.chartTitle, { color: theme.colors.text }]}>Andamento Peso</Text>
+              </View>
+              <View style={styles.chartPlaceholder}>
+                <Text style={[styles.chartPlaceholderText, { color: theme.colors.textSecondary }]}>
+                  Grafico peso ultimi 30 giorni
+                </Text>
+              </View>
+            </View>
+
+            {/* Calories Chart */}
+            <View style={[styles.chartCard, { backgroundColor: theme.colors.surface }]}>
+              <View style={styles.chartHeader}>
+                <BarChart3 size={20} color={theme.colors.primary} />
+                <Text style={[styles.chartTitle, { color: theme.colors.text }]}>Calorie Giornaliere</Text>
+              </View>
+              <View style={styles.chartPlaceholder}>
+                <Text style={[styles.chartPlaceholderText, { color: theme.colors.textSecondary }]}>
+                  Grafico calorie ultimi 7 giorni
+                </Text>
+              </View>
+            </View>
+
+            {/* Macros Chart */}
+            <View style={[styles.chartCard, { backgroundColor: theme.colors.surface }]}>
+              <View style={styles.chartHeader}>
+                <BarChart3 size={20} color={theme.colors.primary} />
+                <Text style={[styles.chartTitle, { color: theme.colors.text }]}>Distribuzione Macronutrienti</Text>
+              </View>
+              <View style={styles.chartPlaceholder}>
+                <Text style={[styles.chartPlaceholderText, { color: theme.colors.textSecondary }]}>
+                  Grafico a torta macronutrienti
+                </Text>
+              </View>
+            </View>
+          </View>
+        </ScrollView>
       )}
+
+      {/* AI Food Scanner Modal */}
+      <Modal visible={showScanner} animationType="slide" presentationStyle="fullScreen">
+        <SafeAreaView style={[styles.scannerContainer, { backgroundColor: '#000' }]}>
+          <View style={styles.scannerHeader}>
+            <TouchableOpacity onPress={() => setShowScanner(false)} style={styles.closeButton}>
+              <X size={24} color="#FFFFFF" />
+            </TouchableOpacity>
+            <Text style={styles.scannerTitle}>Scansiona Alimento</Text>
+            <View style={{ width: 24 }} />
+          </View>
+          
+          {permission?.granted ? (
+            <CameraView style={styles.camera} facing="back">
+              <View style={styles.scannerOverlay}>
+                <View style={styles.scannerFrame} />
+                <Text style={styles.scannerInstructions}>
+                  Inquadra l'alimento per identificarlo
+                </Text>
+                <TouchableOpacity
+                  style={styles.captureButton}
+                  onPress={captureAndAnalyze}
+                  disabled={isScanning}
+                >
+                  {isScanning ? (
+                    <ActivityIndicator color="#FFFFFF" />
+                  ) : (
+                    <Camera size={32} color="#FFFFFF" />
+                  )}
+                </TouchableOpacity>
+              </View>
+            </CameraView>
+          ) : (
+            <View style={styles.permissionContainer}>
+              <Text style={styles.permissionText}>Permesso camera necessario</Text>
+              <TouchableOpacity style={styles.permissionButton} onPress={requestPermission}>
+                <Text style={styles.permissionButtonText}>Concedi Permesso</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+        </SafeAreaView>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -537,5 +719,185 @@ const styles = StyleSheet.create({
   },
   comingSoon: {
     fontSize: 16,
+  },
+  diarioContainer: {
+    paddingHorizontal: 20,
+    paddingTop: 20,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 16,
+  },
+  calendarCard: {
+    padding: 16,
+    borderRadius: 16,
+    marginBottom: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  calendarHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 16,
+  },
+  calendarTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  calendarGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  calendarDay: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  calendarDayText: {
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  dailySummary: {
+    padding: 16,
+    borderRadius: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  summaryTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 12,
+  },
+  summaryStats: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+  },
+  summaryItem: {
+    alignItems: 'center',
+  },
+  summaryValue: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 4,
+  },
+  summaryLabel: {
+    fontSize: 12,
+  },
+  graficiContainer: {
+    paddingHorizontal: 20,
+    paddingTop: 20,
+  },
+  chartCard: {
+    padding: 16,
+    borderRadius: 16,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  chartHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 12,
+  },
+  chartTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  chartPlaceholder: {
+    height: 120,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.02)',
+    borderRadius: 8,
+  },
+  chartPlaceholderText: {
+    fontSize: 14,
+  },
+  scannerContainer: {
+    flex: 1,
+  },
+  scannerHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+  },
+  closeButton: {
+    padding: 4,
+  },
+  scannerTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#FFFFFF',
+  },
+  camera: {
+    flex: 1,
+  },
+  scannerOverlay: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+  },
+  scannerFrame: {
+    width: 250,
+    height: 250,
+    borderWidth: 2,
+    borderColor: '#FFFFFF',
+    borderRadius: 20,
+    marginBottom: 40,
+  },
+  scannerInstructions: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    textAlign: 'center',
+    marginBottom: 40,
+  },
+  captureButton: {
+    width: 70,
+    height: 70,
+    borderRadius: 35,
+    backgroundColor: '#FF0000',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  permissionContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 40,
+  },
+  permissionText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  permissionButton: {
+    backgroundColor: '#FF0000',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 12,
+  },
+  permissionButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });

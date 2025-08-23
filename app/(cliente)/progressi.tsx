@@ -5,18 +5,37 @@ import {
   Text,
   TouchableOpacity,
   View,
-  Dimensions
+  Dimensions,
+  Modal,
+  TextInput,
+  Alert,
+  Image
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Camera, TrendingDown, Target, Award, Check } from 'lucide-react-native';
+import { Camera, TrendingDown, Target, Award, Check, Plus, X, Ruler, BarChart3 } from 'lucide-react-native';
 import { useTheme } from '@/providers/ThemeProvider';
 import { LinearGradient } from 'expo-linear-gradient';
+import { CameraView, useCameraPermissions } from 'expo-camera';
 
 const { width } = Dimensions.get('window');
 
 export default function ProgressiScreen() {
   const { theme } = useTheme();
   const [selectedTab, setSelectedTab] = useState<'bilancia' | 'misure' | 'grafici'>('bilancia');
+  const [showAddGoal, setShowAddGoal] = useState(false);
+  const [showPhotoModal, setShowPhotoModal] = useState(false);
+  const [showMeasureModal, setShowMeasureModal] = useState(false);
+  const [newGoal, setNewGoal] = useState('');
+  const [permission, requestPermission] = useCameraPermissions();
+  const [goals, setGoals] = useState([
+    { id: 1, text: 'Perdere 10kg', completed: false, date: '2025-08-23', photos: [] },
+    { id: 2, text: 'Raggiungere 15% body fat', completed: true, date: '2025-08-15', photos: ['photo1.jpg'] },
+  ]);
+  const [measurements, setMeasurements] = useState([
+    { id: 1, date: '2025-08-23', peso: 75, altezza: 175, petto: 95, vita: 80, fianchi: 90, braccio: 35, coscia: 55 },
+    { id: 2, date: '2025-08-16', peso: 76, altezza: 175, petto: 96, vita: 82, fianchi: 91, braccio: 35, coscia: 56 },
+    { id: 3, date: '2025-08-09', peso: 77, altezza: 175, petto: 97, vita: 84, fianchi: 92, braccio: 36, coscia: 57 },
+  ]);
 
   const obiettivo = {
     tipo: 'Perdita Peso',
@@ -29,6 +48,36 @@ export default function ProgressiScreen() {
   };
 
   const progressPercentage = ((obiettivo.iniziale - obiettivo.attuale) / (obiettivo.iniziale - obiettivo.target)) * 100;
+
+  const addGoal = () => {
+    if (newGoal.trim()) {
+      const newGoalObj = {
+        id: goals.length + 1,
+        text: newGoal.trim(),
+        completed: false,
+        date: new Date().toISOString().split('T')[0],
+        photos: []
+      };
+      setGoals([...goals, newGoalObj]);
+      setNewGoal('');
+      setShowAddGoal(false);
+    }
+  };
+
+  const toggleGoal = (id: number) => {
+    setGoals(goals.map(g => g.id === id ? { ...g, completed: !g.completed } : g));
+  };
+
+  const handleTakePhoto = async () => {
+    if (!permission?.granted) {
+      const result = await requestPermission();
+      if (!result.granted) {
+        Alert.alert('Permesso Negato', 'Permesso camera necessario per scattare foto');
+        return;
+      }
+    }
+    setShowPhotoModal(true);
+  };
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
@@ -197,38 +246,285 @@ export default function ProgressiScreen() {
             </View>
           </View>
 
-          {/* Photo Progress */}
-          <View style={styles.photoSection}>
-            <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
-              Foto Progressi
-            </Text>
-            <TouchableOpacity
-              style={[styles.photoButton, { backgroundColor: theme.colors.surface }]}
-            >
-              <Camera size={24} color={theme.colors.primary} />
-              <Text style={[styles.photoButtonText, { color: theme.colors.text }]}>
-                Scatta Foto di Oggi
-              </Text>
-            </TouchableOpacity>
+          {/* Goals Section */}
+          <View style={styles.goalsSection}>
+            <View style={styles.sectionHeader}>
+              <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Obiettivi</Text>
+              <TouchableOpacity
+                style={[styles.addButton, { backgroundColor: theme.colors.primary }]}
+                onPress={() => setShowAddGoal(true)}
+              >
+                <Plus size={20} color="#FFFFFF" />
+              </TouchableOpacity>
+            </View>
+            
+            {goals.map((goal) => (
+              <View key={goal.id} style={[styles.goalCard, { backgroundColor: theme.colors.surface }]}>
+                <View style={styles.goalHeader}>
+                  <View style={styles.goalInfo}>
+                    <Text style={[styles.goalText, { color: theme.colors.text }]}>{goal.text}</Text>
+                    <Text style={[styles.goalDate, { color: theme.colors.textSecondary }]}>{goal.date}</Text>
+                  </View>
+                  <TouchableOpacity
+                    onPress={() => toggleGoal(goal.id)}
+                  >
+                    {goal.completed ? (
+                      <View style={[styles.checkCircle, { backgroundColor: theme.colors.success }]}>
+                        <Check size={16} color="#FFFFFF" />
+                      </View>
+                    ) : (
+                      <View style={[styles.checkCircle, { borderColor: theme.colors.border }]} />
+                    )}
+                  </TouchableOpacity>
+                </View>
+                
+                {/* Photo Widget */}
+                <View style={styles.photoWidget}>
+                  <Text style={[styles.photoWidgetTitle, { color: theme.colors.text }]}>Foto Progressi</Text>
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.photoScroll}>
+                    <TouchableOpacity
+                      style={[styles.photoCard, { backgroundColor: theme.colors.background }]}
+                      onPress={() => setShowPhotoModal(true)}
+                    >
+                      <Camera size={24} color={theme.colors.primary} />
+                      <Text style={[styles.photoCardText, { color: theme.colors.textSecondary }]}>Oggi</Text>
+                    </TouchableOpacity>
+                    
+                    {/* Mock previous photos */}
+                    <View style={[styles.photoCard, { backgroundColor: '#E0E0E0' }]}>
+                      <Text style={styles.photoCardDate}>Giorno 7</Text>
+                    </View>
+                    <View style={[styles.photoCard, { backgroundColor: '#D0D0D0' }]}>
+                      <Text style={styles.photoCardDate}>Giorno 1</Text>
+                    </View>
+                  </ScrollView>
+                </View>
+              </View>
+            ))}
           </View>
         </ScrollView>
       )}
 
       {selectedTab === 'misure' && (
-        <View style={styles.centerContainer}>
-          <Text style={[styles.comingSoon, { color: theme.colors.textSecondary }]}>
-            Tracking misure corporee in arrivo...
-          </Text>
-        </View>
+        <ScrollView showsVerticalScrollIndicator={false}>
+          <View style={styles.misureContainer}>
+            <View style={styles.sectionHeader}>
+              <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Misure Corporee</Text>
+              <TouchableOpacity
+                style={[styles.addButton, { backgroundColor: theme.colors.primary }]}
+                onPress={() => setShowMeasureModal(true)}
+              >
+                <Plus size={20} color="#FFFFFF" />
+              </TouchableOpacity>
+            </View>
+
+            {measurements.map((measure) => (
+              <View key={measure.id} style={[styles.measureCard, { backgroundColor: theme.colors.surface }]}>
+                <View style={styles.measureHeader}>
+                  <Text style={[styles.measureDate, { color: theme.colors.text }]}>{measure.date}</Text>
+                  <Text style={[styles.measureWeight, { color: theme.colors.primary }]}>{measure.peso} kg</Text>
+                </View>
+                <View style={styles.measureGrid}>
+                  <View style={styles.measureItem}>
+                    <Text style={[styles.measureLabel, { color: theme.colors.textSecondary }]}>Petto</Text>
+                    <Text style={[styles.measureValue, { color: theme.colors.text }]}>{measure.petto} cm</Text>
+                  </View>
+                  <View style={styles.measureItem}>
+                    <Text style={[styles.measureLabel, { color: theme.colors.textSecondary }]}>Vita</Text>
+                    <Text style={[styles.measureValue, { color: theme.colors.text }]}>{measure.vita} cm</Text>
+                  </View>
+                  <View style={styles.measureItem}>
+                    <Text style={[styles.measureLabel, { color: theme.colors.textSecondary }]}>Fianchi</Text>
+                    <Text style={[styles.measureValue, { color: theme.colors.text }]}>{measure.fianchi} cm</Text>
+                  </View>
+                  <View style={styles.measureItem}>
+                    <Text style={[styles.measureLabel, { color: theme.colors.textSecondary }]}>Braccio</Text>
+                    <Text style={[styles.measureValue, { color: theme.colors.text }]}>{measure.braccio} cm</Text>
+                  </View>
+                  <View style={styles.measureItem}>
+                    <Text style={[styles.measureLabel, { color: theme.colors.textSecondary }]}>Coscia</Text>
+                    <Text style={[styles.measureValue, { color: theme.colors.text }]}>{measure.coscia} cm</Text>
+                  </View>
+                </View>
+              </View>
+            ))}
+          </View>
+        </ScrollView>
       )}
 
       {selectedTab === 'grafici' && (
-        <View style={styles.centerContainer}>
-          <Text style={[styles.comingSoon, { color: theme.colors.textSecondary }]}>
-            Grafici progressi in arrivo...
-          </Text>
-        </View>
+        <ScrollView showsVerticalScrollIndicator={false}>
+          <View style={styles.graficiContainer}>
+            <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Grafici Progressi</Text>
+            
+            {/* Weight Chart */}
+            <View style={[styles.chartCard, { backgroundColor: theme.colors.surface }]}>
+              <View style={styles.chartHeader}>
+                <BarChart3 size={20} color={theme.colors.primary} />
+                <Text style={[styles.chartTitle, { color: theme.colors.text }]}>Andamento Peso</Text>
+              </View>
+              <View style={styles.chartPlaceholder}>
+                <Text style={[styles.chartPlaceholderText, { color: theme.colors.textSecondary }]}>
+                  Grafico peso ultimi 30 giorni
+                </Text>
+              </View>
+            </View>
+
+            {/* Body Measurements Chart */}
+            <View style={[styles.chartCard, { backgroundColor: theme.colors.surface }]}>
+              <View style={styles.chartHeader}>
+                <Ruler size={20} color={theme.colors.primary} />
+                <Text style={[styles.chartTitle, { color: theme.colors.text }]}>Misure Corporee</Text>
+              </View>
+              <View style={styles.chartPlaceholder}>
+                <Text style={[styles.chartPlaceholderText, { color: theme.colors.textSecondary }]}>
+                  Grafico misure ultimi 30 giorni
+                </Text>
+              </View>
+            </View>
+
+            {/* Goals Progress Chart */}
+            <View style={[styles.chartCard, { backgroundColor: theme.colors.surface }]}>
+              <View style={styles.chartHeader}>
+                <Target size={20} color={theme.colors.primary} />
+                <Text style={[styles.chartTitle, { color: theme.colors.text }]}>Progressi Obiettivi</Text>
+              </View>
+              <View style={styles.chartPlaceholder}>
+                <Text style={[styles.chartPlaceholderText, { color: theme.colors.textSecondary }]}>
+                  Grafico completamento obiettivi
+                </Text>
+              </View>
+            </View>
+          </View>
+        </ScrollView>
       )}
+      {/* Add Goal Modal */}
+      <Modal visible={showAddGoal} transparent animationType="fade">
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalCard, { backgroundColor: theme.colors.surface }]}>
+            <Text style={[styles.modalTitle, { color: theme.colors.text }]}>Nuovo Obiettivo</Text>
+            <TextInput
+              style={[styles.goalInput, { backgroundColor: theme.colors.background, color: theme.colors.text }]}
+              placeholder="Inserisci il tuo obiettivo..."
+              placeholderTextColor={theme.colors.textSecondary}
+              value={newGoal}
+              onChangeText={setNewGoal}
+              multiline
+            />
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={[styles.modalButton, { backgroundColor: theme.colors.border }]}
+                onPress={() => {
+                  setShowAddGoal(false);
+                  setNewGoal('');
+                }}
+              >
+                <Text style={[styles.modalButtonText, { color: theme.colors.text }]}>Annulla</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalButton, { backgroundColor: theme.colors.primary }]}
+                onPress={addGoal}
+              >
+                <Text style={[styles.modalButtonText, { color: '#FFFFFF' }]}>Aggiungi</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Photo Modal */}
+      <Modal visible={showPhotoModal} animationType="slide" presentationStyle="fullScreen">
+        <SafeAreaView style={[styles.photoModalContainer, { backgroundColor: '#000' }]}>
+          <View style={styles.photoModalHeader}>
+            <TouchableOpacity onPress={() => setShowPhotoModal(false)} style={styles.closeButton}>
+              <X size={24} color="#FFFFFF" />
+            </TouchableOpacity>
+            <Text style={styles.photoModalTitle}>Foto Progresso</Text>
+            <View style={{ width: 24 }} />
+          </View>
+          
+          {permission?.granted ? (
+            <CameraView style={styles.camera} facing="back">
+              <View style={styles.cameraOverlay}>
+                <TouchableOpacity
+                  style={styles.captureButton}
+                  onPress={() => {
+                    setShowPhotoModal(false);
+                    Alert.alert('Foto Salvata', 'La tua foto progresso è stata salvata!');
+                  }}
+                >
+                  <Camera size={32} color="#FFFFFF" />
+                </TouchableOpacity>
+              </View>
+            </CameraView>
+          ) : (
+            <View style={styles.permissionContainer}>
+              <Text style={styles.permissionText}>Permesso camera necessario</Text>
+              <TouchableOpacity style={styles.permissionButton} onPress={requestPermission}>
+                <Text style={styles.permissionButtonText}>Concedi Permesso</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+        </SafeAreaView>
+      </Modal>
+
+      {/* Measure Modal */}
+      <Modal visible={showMeasureModal} transparent animationType="fade">
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalCard, { backgroundColor: theme.colors.surface }]}>
+            <Text style={[styles.modalTitle, { color: theme.colors.text }]}>Nuove Misure</Text>
+            <Text style={[styles.modalSubtitle, { color: theme.colors.textSecondary }]}>Inserisci le tue misure corporee</Text>
+            
+            <View style={styles.measureInputs}>
+              <View style={styles.measureInputRow}>
+                <Text style={[styles.measureInputLabel, { color: theme.colors.text }]}>Peso (kg)</Text>
+                <TextInput
+                  style={[styles.measureInput, { backgroundColor: theme.colors.background, color: theme.colors.text }]}
+                  placeholder="75"
+                  placeholderTextColor={theme.colors.textSecondary}
+                  keyboardType="numeric"
+                />
+              </View>
+              <View style={styles.measureInputRow}>
+                <Text style={[styles.measureInputLabel, { color: theme.colors.text }]}>Petto (cm)</Text>
+                <TextInput
+                  style={[styles.measureInput, { backgroundColor: theme.colors.background, color: theme.colors.text }]}
+                  placeholder="95"
+                  placeholderTextColor={theme.colors.textSecondary}
+                  keyboardType="numeric"
+                />
+              </View>
+              <View style={styles.measureInputRow}>
+                <Text style={[styles.measureInputLabel, { color: theme.colors.text }]}>Vita (cm)</Text>
+                <TextInput
+                  style={[styles.measureInput, { backgroundColor: theme.colors.background, color: theme.colors.text }]}
+                  placeholder="80"
+                  placeholderTextColor={theme.colors.textSecondary}
+                  keyboardType="numeric"
+                />
+              </View>
+            </View>
+            
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={[styles.modalButton, { backgroundColor: theme.colors.border }]}
+                onPress={() => setShowMeasureModal(false)}
+              >
+                <Text style={[styles.modalButtonText, { color: theme.colors.text }]}>Annulla</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalButton, { backgroundColor: theme.colors.primary }]}
+                onPress={() => {
+                  setShowMeasureModal(false);
+                  Alert.alert('Misure Salvate', 'Le tue nuove misure sono state registrate!');
+                }}
+              >
+                <Text style={[styles.modalButtonText, { color: '#FFFFFF' }]}>Salva</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -419,5 +715,290 @@ const styles = StyleSheet.create({
   },
   comingSoon: {
     fontSize: 16,
+  },
+  goalsSection: {
+    paddingHorizontal: 20,
+    marginTop: 30,
+    marginBottom: 30,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  addButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  goalCard: {
+    padding: 16,
+    borderRadius: 16,
+    marginBottom: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  goalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 12,
+  },
+  goalInfo: {
+    flex: 1,
+  },
+  goalText: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  goalDate: {
+    fontSize: 12,
+  },
+  checkCircle: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    borderWidth: 2,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  photoWidget: {
+    marginTop: 12,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(0, 0, 0, 0.05)',
+  },
+  photoWidgetTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    marginBottom: 8,
+  },
+  photoScroll: {
+    flexDirection: 'row',
+  },
+  photoCard: {
+    width: 80,
+    height: 80,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 8,
+  },
+  photoCardText: {
+    fontSize: 12,
+    marginTop: 4,
+  },
+  photoCardDate: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: '#666',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  modalCard: {
+    width: '100%',
+    borderRadius: 16,
+    padding: 20,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  modalSubtitle: {
+    fontSize: 14,
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  goalInput: {
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 20,
+    minHeight: 80,
+    textAlignVertical: 'top',
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  modalButton: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  modalButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  photoModalContainer: {
+    flex: 1,
+  },
+  photoModalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+  },
+  closeButton: {
+    padding: 4,
+  },
+  photoModalTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#FFFFFF',
+  },
+  camera: {
+    flex: 1,
+  },
+  cameraOverlay: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+    paddingBottom: 50,
+  },
+  captureButton: {
+    width: 70,
+    height: 70,
+    borderRadius: 35,
+    backgroundColor: '#FF0000',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  permissionContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 40,
+  },
+  permissionText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  permissionButton: {
+    backgroundColor: '#FF0000',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 12,
+  },
+  permissionButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  misureContainer: {
+    paddingHorizontal: 20,
+    paddingTop: 20,
+  },
+  measureCard: {
+    padding: 16,
+    borderRadius: 16,
+    marginBottom: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  measureHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  measureDate: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  measureWeight: {
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  measureGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+  measureItem: {
+    width: '30%',
+    alignItems: 'center',
+  },
+  measureLabel: {
+    fontSize: 12,
+    marginBottom: 4,
+  },
+  measureValue: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  measureInputs: {
+    gap: 12,
+    marginBottom: 20,
+  },
+  measureInputRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  measureInputLabel: {
+    fontSize: 14,
+    fontWeight: '500',
+    flex: 1,
+  },
+  measureInput: {
+    flex: 1,
+    borderRadius: 8,
+    padding: 8,
+    textAlign: 'center',
+  },
+  graficiContainer: {
+    paddingHorizontal: 20,
+    paddingTop: 20,
+  },
+  chartCard: {
+    padding: 16,
+    borderRadius: 16,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  chartHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 12,
+  },
+  chartTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  chartPlaceholder: {
+    height: 120,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.02)',
+    borderRadius: 8,
+  },
+  chartPlaceholderText: {
+    fontSize: 14,
   },
 });

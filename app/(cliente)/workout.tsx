@@ -294,7 +294,7 @@ export default function WorkoutScreen() {
         )}
       </ScrollView>
 
-      {/* Live Workout Modal */}
+      {/* Live Workout Modal - EvolutionFit Style */}
       <Modal
         visible={showLiveWorkout}
         animationType="slide"
@@ -302,7 +302,7 @@ export default function WorkoutScreen() {
         testID="live-workout-modal"
       >
         {selectedEsercizio && (
-          <LiveWorkoutModal
+          <EvolutionFitWorkoutModal
             esercizio={selectedEsercizio}
             onClose={() => {
               setShowLiveWorkout(false);
@@ -316,8 +316,8 @@ export default function WorkoutScreen() {
   );
 }
 
-// Live Workout Component
-function LiveWorkoutModal({ 
+// EvolutionFit Style Live Workout Component
+function EvolutionFitWorkoutModal({ 
   esercizio, 
   onClose, 
   theme 
@@ -368,26 +368,25 @@ function LiveWorkoutModal({
   };
 
   return (
-    <SafeAreaView style={[styles.liveContainer, { backgroundColor: theme.colors.background }]}>
-      <View style={styles.dayBadge}>
-        <Text style={[styles.dayBadgeText, { color: theme.colors.textSecondary }]}>Sessione</Text>
-      </View>
-      {/* Header */}
-      <View style={styles.liveHeader}>
-        <TouchableOpacity onPress={onClose} style={styles.backButton}>
-          <ChevronLeft size={24} color={theme.colors.text} />
+    <SafeAreaView style={[styles.evolutionContainer, { backgroundColor: '#000000' }]}>
+      {/* EvolutionFit Header */}
+      <View style={styles.evolutionHeader}>
+        <TouchableOpacity onPress={onClose} style={styles.evolutionBackButton}>
+          <ChevronLeft size={24} color="#FFFFFF" />
         </TouchableOpacity>
-        <Text style={[styles.liveTitle, { color: theme.colors.text }]}>{esercizio.nome}</Text>
-        <View style={styles.serieIndicator}>
-          <Text style={[styles.serieText, { color: theme.colors.primary }]}>
-            {currentSerie}/{esercizio.serie}
-          </Text>
+        <View style={styles.evolutionTitleContainer}>
+          <Text style={styles.evolutionTitle}>{esercizio.nome}</Text>
+          <Text style={styles.evolutionSubtitle}>Rematore con Manubrio si...</Text>
+        </View>
+        <View style={styles.evolutionSessionBadge}>
+          <Text style={styles.evolutionSessionText}>Sessione</Text>
+          <Text style={styles.evolutionSessionNumber}>1/4</Text>
         </View>
       </View>
 
-      {/* Video Player */}
+      {/* EvolutionFit Video Player */}
       {Platform.OS === 'web' ? (
-        <View style={styles.videoContainer}>
+        <View style={styles.evolutionVideoContainer}>
           <iframe
             width="100%"
             height="100%"
@@ -399,123 +398,105 @@ function LiveWorkoutModal({
         </View>
       ) : (
         <TouchableOpacity
-          style={[styles.videoContainer, { alignItems: 'center', justifyContent: 'center' }]}
+          style={styles.evolutionVideoContainer}
           activeOpacity={0.8}
           onPress={() => Linking.openURL(`https://www.youtube.com/watch?v=${esercizio.youtubeId}`)}
         >
           <Image
             source={{ uri: `https://img.youtube.com/vi/${esercizio.youtubeId}/hqdefault.jpg` }}
-            style={{ width: '100%', height: '100%' }}
+            style={styles.evolutionVideoImage}
             resizeMode="cover"
           />
-          <View style={styles.playOverlay}>
+          <View style={styles.evolutionPlayOverlay}>
             <PlayCircle size={56} color="#FFFFFF" />
-            <Text style={styles.playOverlayText}>Apri video</Text>
           </View>
         </TouchableOpacity>
       )}
 
-      {/* Controls */}
-      <View style={styles.liveControls}>
+      {/* EvolutionFit Controls */}
+      <View style={styles.evolutionControls}>
         {isResting ? (
-          <View style={styles.restContainer}>
-            <Text style={[styles.restTitle, { color: theme.colors.text }]}>RIPOSO</Text>
-            <Text style={[styles.restTimerText, { color: theme.colors.primary }]}>
-              {restTimer}
-            </Text>
-            <TouchableOpacity style={styles.skipButton} onPress={skipRest}>
-              <Text style={styles.skipButtonText}>SALTA RIPOSO</Text>
+          <View style={styles.evolutionRestContainer}>
+            <Text style={styles.evolutionRestTitle}>RIPOSO</Text>
+            <View style={styles.evolutionRestTimer}>
+              <Text style={styles.evolutionRestNumber}>{restTimer}</Text>
+            </View>
+            <TouchableOpacity style={styles.evolutionSkipButton} onPress={skipRest}>
+              <Text style={styles.evolutionSkipText}>SALTA RIPOSO</Text>
             </TouchableOpacity>
           </View>
         ) : (
           <>
-            {/* Rep Counter */}
-            <View style={styles.repCounter}>
-              <TouchableOpacity
-                style={styles.repButton}
-                onPress={() => setReps(Math.max(0, reps - 1))}
-              >
-                <Text style={[styles.repButtonText, { color: theme.colors.primary }]}>-</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.repDisplay}
-                onPress={() => setReps(reps + 1)}
-              >
-                <Text style={[styles.repNumber, { color: theme.colors.text }]}>{reps}</Text>
-                <Text style={[styles.repLabel, { color: theme.colors.textSecondary }]}>
-                  RIPETIZIONI
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.repButton}
-                onPress={() => setReps(reps + 1)}
-              >
-                <Text style={[styles.repButtonText, { color: theme.colors.primary }]}>+</Text>
-              </TouchableOpacity>
+            {/* EvolutionFit Rep Counter */}
+            <View style={styles.evolutionRepSection}>
+              <View style={styles.evolutionRepCounter}>
+                <TouchableOpacity
+                  style={styles.evolutionRepButton}
+                  onPress={() => setReps(Math.max(0, reps - 1))}
+                >
+                  <Text style={styles.evolutionRepButtonText}>-</Text>
+                </TouchableOpacity>
+                <View style={styles.evolutionRepDisplay}>
+                  <Text style={styles.evolutionRepNumber}>{reps}</Text>
+                </View>
+                <TouchableOpacity
+                  style={styles.evolutionRepButton}
+                  onPress={() => setReps(reps + 1)}
+                >
+                  <Text style={styles.evolutionRepButtonText}>+</Text>
+                </TouchableOpacity>
+              </View>
+              <Text style={styles.evolutionRepLabel}>RIPETIZIONI</Text>
             </View>
 
-            {/* Weight Display */}
-            {esercizio.peso && (
-              <View style={styles.weightDisplay}>
-                <Text style={[styles.weightText, { color: theme.colors.text }]}>
-                  {esercizio.peso} kg
-                </Text>
-              </View>
-            )}
+            {/* EvolutionFit Weight Display */}
+            <View style={styles.evolutionWeightSection}>
+              <Text style={styles.evolutionWeightLabel}>20 kg</Text>
+            </View>
 
-            {/* Complete Button */}
+            {/* EvolutionFit Complete Button */}
             <TouchableOpacity
-              style={[styles.completeButton, { backgroundColor: theme.colors.primary }]}
+              style={styles.evolutionCompleteButton}
               onPress={completeSerie}
               testID="complete-serie"
             >
-              <Text style={styles.completeButtonText}>
-                {currentSerie === esercizio.serie ? 'COMPLETA ESERCIZIO' : 'SERIE COMPLETATA'}
+              <Text style={styles.evolutionCompleteText}>
+                SERIE COMPLETATA
               </Text>
             </TouchableOpacity>
           </>
         )}
-
-        {/* Note */}
-        {esercizio.note && (
-          <View style={[styles.noteContainer, { backgroundColor: theme.colors.surface }]}>
-            <Text style={[styles.noteText, { color: theme.colors.textSecondary }]}>
-              💡 {esercizio.note}
-            </Text>
-          </View>
-        )}
       </View>
 
-      {/* Log Workout stile EvolutionFit */}
-      <ScrollView style={styles.logContainer} contentContainerStyle={{ paddingBottom: 40 }}>
-        <Text style={styles.logTitle}>Log workout</Text>
-        <View style={[styles.logCard, { backgroundColor: theme.colors.surface }]}
-          testID="current-session-log"
-        >
-          <Text style={[styles.logCardTitle, { color: theme.colors.text }]}>Sessione corrente</Text>
+      {/* EvolutionFit Log Workout */}
+      <ScrollView style={styles.evolutionLogContainer} contentContainerStyle={{ paddingBottom: 40 }}>
+        <Text style={styles.evolutionLogTitle}>Log workout</Text>
+        
+        {/* Current Session */}
+        <View style={styles.evolutionLogCard} testID="current-session-log">
+          <Text style={styles.evolutionLogCardTitle}>Sessione corrente</Text>
           {serieData.length === 0 ? (
-            <Text style={[styles.logEmpty, { color: theme.colors.textSecondary }]}>Nessuna serie registrata</Text>
+            <Text style={styles.evolutionLogEmpty}>Nessuna serie registrata</Text>
           ) : (
             serieData.map((s, i) => (
-              <View key={i} style={styles.logRow}>
-                <Text style={[styles.logCell, styles.logSerie]}>#{i + 1}</Text>
-                <Text style={styles.logCell}>{s.reps} rep</Text>
-                <Text style={styles.logCell}>{s.peso} kg</Text>
+              <View key={i} style={styles.evolutionLogRow}>
+                <Text style={[styles.evolutionLogCell, styles.evolutionLogSerie]}>#{i + 1}</Text>
+                <Text style={styles.evolutionLogCell}>{s.reps} rep</Text>
+                <Text style={styles.evolutionLogCell}>{s.peso} kg</Text>
               </View>
             ))
           )}
         </View>
 
+        {/* Historical Sessions */}
         {storico.map((sessione, idx) => (
-          <View key={sessione.data + idx} style={[styles.logCard, { backgroundColor: theme.colors.surface }]}
-            testID={`history-${sessione.data}`}
-          >
-            <Text style={[styles.logCardTitle, { color: theme.colors.text }]}>{sessione.data}</Text>
+          <View key={sessione.data + idx} style={styles.evolutionLogCard} testID={`history-${sessione.data}`}>
+            <Text style={styles.evolutionLogCardTitle}>{sessione.data}</Text>
             {sessione.sets.map((s) => (
-              <View key={`${sessione.data}-${s.serie}`} style={styles.logRow}>
-                <Text style={[styles.logCell, styles.logSerie]}>#{s.serie}</Text>
-                <Text style={styles.logCell}>{s.reps} rep</Text>
-                <Text style={styles.logCell}>{s.peso} kg</Text>
+              <View key={`${sessione.data}-${s.serie}`} style={styles.evolutionLogRow}>
+                <Text style={[styles.evolutionLogCell, styles.evolutionLogSerie]}>#{s.serie}</Text>
+                <Text style={styles.evolutionLogCell}>{s.reps} rep</Text>
+                <Text style={styles.evolutionLogCell}>{s.peso} kg</Text>
               </View>
             ))}
           </View>
@@ -881,5 +862,212 @@ const styles = StyleSheet.create({
   },
   dayBadgeText: {
     fontSize: 12,
+  },
+  // EvolutionFit Styles
+  evolutionContainer: {
+    flex: 1,
+  },
+  evolutionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#333333',
+  },
+  evolutionBackButton: {
+    padding: 8,
+  },
+  evolutionTitleContainer: {
+    flex: 1,
+    marginLeft: 12,
+  },
+  evolutionTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#FFFFFF',
+  },
+  evolutionSubtitle: {
+    fontSize: 12,
+    color: '#888888',
+    marginTop: 2,
+  },
+  evolutionSessionBadge: {
+    alignItems: 'center',
+  },
+  evolutionSessionText: {
+    fontSize: 10,
+    color: '#888888',
+  },
+  evolutionSessionNumber: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#FFFFFF',
+  },
+  evolutionVideoContainer: {
+    width: width,
+    height: height * 0.35,
+    backgroundColor: '#1a1a1a',
+    position: 'relative',
+  },
+  evolutionVideoImage: {
+    width: '100%',
+    height: '100%',
+  },
+  evolutionPlayOverlay: {
+    position: 'absolute',
+    top: '50%',
+    left: '50%',
+    transform: [{ translateX: -28 }, { translateY: -28 }],
+  },
+  evolutionControls: {
+    flex: 1,
+    backgroundColor: '#000000',
+    paddingHorizontal: 20,
+    paddingTop: 20,
+  },
+  evolutionRestContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    flex: 1,
+  },
+  evolutionRestTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#FFFFFF',
+    marginBottom: 20,
+  },
+  evolutionRestTimer: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    borderWidth: 3,
+    borderColor: '#FF0000',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 30,
+  },
+  evolutionRestNumber: {
+    fontSize: 36,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+  },
+  evolutionSkipButton: {
+    backgroundColor: '#FF0000',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 25,
+  },
+  evolutionSkipText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  evolutionRepSection: {
+    alignItems: 'center',
+    marginBottom: 30,
+  },
+  evolutionRepCounter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  evolutionRepButton: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: '#1a1a1a',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginHorizontal: 20,
+  },
+  evolutionRepButtonText: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+  },
+  evolutionRepDisplay: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: '#FF0000',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  evolutionRepNumber: {
+    fontSize: 36,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+  },
+  evolutionRepLabel: {
+    fontSize: 12,
+    color: '#888888',
+    letterSpacing: 1,
+  },
+  evolutionWeightSection: {
+    alignItems: 'center',
+    marginBottom: 40,
+  },
+  evolutionWeightLabel: {
+    fontSize: 24,
+    fontWeight: '600',
+    color: '#FFFFFF',
+  },
+  evolutionCompleteButton: {
+    backgroundColor: '#FF0000',
+    paddingVertical: 16,
+    borderRadius: 12,
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  evolutionCompleteText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+  },
+  evolutionLogContainer: {
+    backgroundColor: '#000000',
+    paddingHorizontal: 20,
+  },
+  evolutionLogTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    marginBottom: 16,
+  },
+  evolutionLogCard: {
+    backgroundColor: '#1a1a1a',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+  },
+  evolutionLogCardTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    marginBottom: 12,
+  },
+  evolutionLogRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#333333',
+  },
+  evolutionLogCell: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#FFFFFF',
+  },
+  evolutionLogSerie: {
+    width: 48,
+    color: '#888888',
+  },
+  evolutionLogEmpty: {
+    fontSize: 12,
+    color: '#888888',
+    textAlign: 'center',
+    paddingVertical: 20,
   },
 });
